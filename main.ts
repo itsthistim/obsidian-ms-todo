@@ -6,7 +6,6 @@ import {
 	MarkdownPostProcessorContext,
 	MarkdownRenderChild,
 } from "obsidian";
-// @ts-ignore
 import axios from "axios";
 
 interface MsTodoSettings {
@@ -40,7 +39,10 @@ export default class MsTodoPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new MsTodoSettingTab(this.app, this));
-		this.registerMarkdownCodeBlockProcessor("mstodo", this.processMsTodoBlock.bind(this));
+		this.registerMarkdownCodeBlockProcessor(
+			"mstodo",
+			this.processMsTodoBlock.bind(this)
+		);
 	}
 
 	onunload() {
@@ -64,54 +66,33 @@ export default class MsTodoPlugin extends Plugin {
 		el: HTMLElement,
 		ctx: MarkdownPostProcessorContext
 	) {
-		// Create container for the tasks
 		const container = el.createDiv({ cls: "mstodo-container" });
-
-		// Show loading state
 		container.setText("Loading MS Todo tasks...");
 
 		try {
-			// Fetch tasks from API
 			const tasks = await this.fetchAllTasks();
 
 			if (!tasks || tasks.length === 0) {
-				container.setText(
-					"No tasks found. Check your API token in settings."
-				);
-				return;
+				return container.setText("No tasks found. Check your API token in settings.");
 			}
 
-			// Clear loading text
 			container.empty();
 
-			// Group tasks by list
 			const tasksByList = this.groupTasksByList(tasks);
 
-			// Render tasks
 			for (const [listName, listTasks] of Object.entries(tasksByList)) {
-				const listContainer = container.createDiv({
-					cls: "mstodo-list",
-				});
-				listContainer.createEl("h4", {
-					text: listName,
-					cls: "mstodo-list-title",
-				});
-
-				const taskList = listContainer.createEl("ul", {
-					cls: "mstodo-task-list",
-				});
+				const listContainer = container.createDiv({ cls: "mstodo-list" });
+				
+				listContainer.createEl("h4", { text: listName, cls: "mstodo-list-title" });
+				const taskList = listContainer.createEl("ul", { cls: "mstodo-task-list" });
 
 				for (const task of listTasks) {
-					const taskItem = taskList.createEl("li", {
-						cls: "mstodo-task-item",
-					});
+					const taskItem = taskList.createEl("li", { cls: "mstodo-task-item" });
 
-					// Create task content container
 					const taskContent = taskItem.createDiv({
 						cls: "mstodo-task-content",
 					});
 
-					// Create checkbox
 					const checkbox = taskContent.createEl("input", {
 						type: "checkbox",
 						cls: "mstodo-checkbox",
@@ -123,44 +104,16 @@ export default class MsTodoPlugin extends Plugin {
 							task.listId,
 							checkbox.checked
 						);
-						// The checkbox state change will automatically update the UI
 					});
 
-					// Create task text
-					const taskText = taskContent.createSpan({
-						text: task.title,
-						cls: `mstodo-task-text ${
-							task.status === "completed" ? "completed" : ""
-						}`,
-					});
-
-					// Render checklist items if they exist
 					if (task.checklistItems && task.checklistItems.length > 0) {
-						const checklistContainer = taskItem.createEl("ul", {
-							cls: "mstodo-checklist",
-						});
+						const checklistContainer = taskItem.createEl("ul", { cls: "mstodo-checklist" });
 
 						for (const checklistItem of task.checklistItems) {
-							const checklistItemEl = checklistContainer.createEl(
-								"li",
-								{
-									cls: "mstodo-checklist-item",
-								}
-							);
-
-							// Create checklist item content container
-							const checklistContent = checklistItemEl.createDiv({
-								cls: "mstodo-checklist-content",
-							});
-
-							// Create checklist item checkbox
-							const checklistCheckbox = checklistContent.createEl(
-								"input",
-								{
-									type: "checkbox",
-									cls: "mstodo-checklist-checkbox",
-								}
-							);
+							const checklistItemEl = checklistContainer.createEl("li", { cls: "mstodo-checklist-item" } );
+							const checklistContent = checklistItemEl.createDiv({ cls: "mstodo-checklist-content" });
+							
+							const checklistCheckbox = checklistContent.createEl("input", { type: "checkbox", cls: "mstodo-checklist-checkbox" });
 							checklistCheckbox.checked = checklistItem.isChecked;
 							checklistCheckbox.addEventListener(
 								"change",
@@ -173,14 +126,6 @@ export default class MsTodoPlugin extends Plugin {
 									);
 								}
 							);
-
-							// Create checklist item text
-							const checklistText = checklistContent.createSpan({
-								text: checklistItem.displayName,
-								cls: `mstodo-checklist-text ${
-									checklistItem.isChecked ? "completed" : ""
-								}`,
-							});
 						}
 					}
 				}
@@ -197,7 +142,6 @@ export default class MsTodoPlugin extends Plugin {
 		}
 
 		try {
-			// First, get all todo lists
 			const listsResponse = await axios.get(
 				`${GRAPH_API_BASE}/me/todo/lists`,
 				{
@@ -211,7 +155,6 @@ export default class MsTodoPlugin extends Plugin {
 			const todoLists = listsResponse.data.value || [];
 			const allTasks: MsTodoTask[] = [];
 
-			// For each list, get its tasks
 			for (const list of todoLists) {
 				try {
 					const tasksResponse = await axios.get(
@@ -227,7 +170,6 @@ export default class MsTodoPlugin extends Plugin {
 					const tasks = tasksResponse.data.value || [];
 					const tasksWithListInfo: MsTodoTask[] = [];
 
-					// For each task, get its checklist items
 					for (const task of tasks) {
 						try {
 							const checklistResponse = await axios.get(
@@ -259,7 +201,6 @@ export default class MsTodoPlugin extends Plugin {
 								checklistItems: formattedChecklistItems,
 							});
 						} catch (checklistError) {
-							// If checklist fetch fails, still include the task without checklist
 							console.warn(
 								`Failed to fetch checklist for task ${task.title}:`,
 								checklistError.message
