@@ -1,8 +1,109 @@
-/*
+/* MS Todo Plugin Styles */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.mstodo-container {
+    padding: 1rem;
+    border-radius: 6px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+}
 
-If your plugin does not need CSS, delete this file.
+.mstodo-list {
+    margin-bottom: 1.5rem;
+}
 
-*/
+.mstodo-list:last-child {
+    margin-bottom: 0;
+}
+
+.mstodo-list-title {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-accent);
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.mstodo-task-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mstodo-task-item {
+    padding: 0.25rem 0;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.mstodo-task-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.mstodo-task-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.mstodo-checkbox {
+    margin: 0;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--interactive-accent);
+}
+
+.mstodo-task-text {
+    flex: 1;
+    line-height: 1.4;
+    transition: opacity 0.2s ease;
+}
+
+.mstodo-task-text.completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.mstodo-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0.25rem 0 0 1.5rem;
+}
+
+.mstodo-checklist-item {
+    padding: 0.125rem 0;
+    margin: 0;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.mstodo-checklist-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.mstodo-checklist-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.mstodo-checklist-checkbox {
+    margin: 0;
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    accent-color: var(--interactive-accent);
+}
+
+.mstodo-checklist-text {
+    flex: 1;
+    line-height: 1.3;
+    font-size: 0.9em;
+    transition: opacity 0.2s ease;
+}
+
+.mstodo-checklist-text.completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
