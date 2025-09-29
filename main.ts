@@ -4,49 +4,44 @@ import {
 	PluginSettingTab,
 	Setting,
 	MarkdownPostProcessorContext,
-	MarkdownRenderChild,
 } from "obsidian";
 import axios from "axios";
 
-interface MsTodoSettings {
+type PluginSettings = {
 	msAuthToken: string;
-}
+};
 
-interface MsTodoTask {
+type Task = {
 	id: string;
 	title: string;
 	status: "notStarted" | "inProgress" | "completed";
 	listId: string;
 	listName: string;
-	checklistItems?: MsTodoChecklistItem[];
-}
+	checklistItems?: ChecklistItem[];
+};
 
-interface MsTodoChecklistItem {
+type ChecklistItem = {
 	id: string;
 	displayName: string;
 	isChecked: boolean;
-}
+};
 
-const DEFAULT_SETTINGS: MsTodoSettings = {
+const DEFAULT_SETTINGS: PluginSettings = {
 	msAuthToken: "",
 };
 
 const GRAPH_API_BASE = "https://graph.microsoft.com/v1.0";
 
 export default class MsTodoPlugin extends Plugin {
-	settings: MsTodoSettings;
+	settings: PluginSettings;
 
 	async onload() {
 		await this.loadSettings();
-		this.addSettingTab(new MsTodoSettingTab(this.app, this));
+		this.addSettingTab(new SettingTab(this.app, this));
 		this.registerMarkdownCodeBlockProcessor(
 			"mstodo",
 			this.processMsTodoBlock.bind(this)
 		);
-	}
-
-	onunload() {
-		// Cleanup if needed
 	}
 
 	async loadSettings() {
@@ -61,7 +56,7 @@ export default class MsTodoPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	private async processMsTodoBlock(
+	async processMsTodoBlock(
 		source: string,
 		el: HTMLElement,
 		ctx: MarkdownPostProcessorContext
@@ -73,7 +68,7 @@ export default class MsTodoPlugin extends Plugin {
 			const tasks = await this.fetchAllTasks();
 
 			if (!tasks || tasks.length === 0) {
-				return container.setText("No tasks found. Check your API token in settings.");
+				return container.setText("No tasks found.");
 			}
 
 			container.empty();
@@ -81,13 +76,23 @@ export default class MsTodoPlugin extends Plugin {
 			const tasksByList = this.groupTasksByList(tasks);
 
 			for (const [listName, listTasks] of Object.entries(tasksByList)) {
-				const listContainer = container.createDiv({ cls: "mstodo-list" });
-				
-				listContainer.createEl("h4", { text: listName, cls: "mstodo-list-title" });
-				const taskList = listContainer.createEl("ul", { cls: "mstodo-task-list" });
+				const listContainer = container.createDiv({
+					cls: "mstodo-list",
+				});
+
+				listContainer.createEl("h4", {
+					text: listName,
+					cls: "mstodo-list-title",
+				});
+
+				const taskList = listContainer.createEl("ul", {
+					cls: "mstodo-task-list",
+				});
 
 				for (const task of listTasks) {
-					const taskItem = taskList.createEl("li", { cls: "mstodo-task-item" });
+					const taskItem = taskList.createEl("li", {
+						cls: "mstodo-task-item",
+					});
 
 					const taskContent = taskItem.createDiv({
 						cls: "mstodo-task-content",
@@ -107,13 +112,26 @@ export default class MsTodoPlugin extends Plugin {
 					});
 
 					if (task.checklistItems && task.checklistItems.length > 0) {
-						const checklistContainer = taskItem.createEl("ul", { cls: "mstodo-checklist" });
+						const checklistContainer = taskItem.createEl("ul", {
+							cls: "mstodo-checklist",
+						});
 
 						for (const checklistItem of task.checklistItems) {
-							const checklistItemEl = checklistContainer.createEl("li", { cls: "mstodo-checklist-item" } );
-							const checklistContent = checklistItemEl.createDiv({ cls: "mstodo-checklist-content" });
-							
-							const checklistCheckbox = checklistContent.createEl("input", { type: "checkbox", cls: "mstodo-checklist-checkbox" });
+							const checklistItemEl = checklistContainer.createEl(
+								"li",
+								{ cls: "mstodo-checklist-item" }
+							);
+							const checklistContent = checklistItemEl.createDiv({
+								cls: "mstodo-checklist-content",
+							});
+
+							const checklistCheckbox = checklistContent.createEl(
+								"input",
+								{
+									type: "checkbox",
+									cls: "mstodo-checklist-checkbox",
+								}
+							);
 							checklistCheckbox.checked = checklistItem.isChecked;
 							checklistCheckbox.addEventListener(
 								"change",
@@ -136,7 +154,7 @@ export default class MsTodoPlugin extends Plugin {
 		}
 	}
 
-	private async fetchAllTasks(): Promise<MsTodoTask[]> {
+	private async fetchAllTasks(): Promise<Task[]> {
 		if (!this.settings.msAuthToken) {
 			throw new Error("MS Graph API token not configured");
 		}
@@ -153,7 +171,7 @@ export default class MsTodoPlugin extends Plugin {
 			);
 
 			const todoLists = listsResponse.data.value || [];
-			const allTasks: MsTodoTask[] = [];
+			const allTasks: Task[] = [];
 
 			for (const list of todoLists) {
 				try {
@@ -168,7 +186,7 @@ export default class MsTodoPlugin extends Plugin {
 					);
 
 					const tasks = tasksResponse.data.value || [];
-					const tasksWithListInfo: MsTodoTask[] = [];
+					const tasksWithListInfo: Task[] = [];
 
 					for (const task of tasks) {
 						try {
@@ -185,7 +203,7 @@ export default class MsTodoPlugin extends Plugin {
 							const checklistItems =
 								checklistResponse.data.value || [];
 							const formattedChecklistItems = checklistItems.map(
-								(item: any) => ({
+								(item: ChecklistItem) => ({
 									id: item.id,
 									displayName: item.displayName,
 									isChecked: item.isChecked,
@@ -226,7 +244,7 @@ export default class MsTodoPlugin extends Plugin {
 			}
 
 			return allTasks;
-		} catch (error: any) {
+		} catch (error) {
 			console.error("Error fetching tasks:", error);
 
 			if (error.response) {
@@ -270,7 +288,7 @@ export default class MsTodoPlugin extends Plugin {
 			);
 
 			console.log(`Updated task ${taskId} to ${newStatus}`);
-		} catch (error: any) {
+		} catch (error) {
 			console.error("Error updating task status:", error);
 
 			if (error.response) {
@@ -317,7 +335,7 @@ export default class MsTodoPlugin extends Plugin {
 					isChecked ? "checked" : "unchecked"
 				}`
 			);
-		} catch (error: any) {
+		} catch (error) {
 			console.error("Error updating checklist item status:", error);
 
 			if (error.response) {
@@ -335,10 +353,8 @@ export default class MsTodoPlugin extends Plugin {
 		}
 	}
 
-	private groupTasksByList(
-		tasks: MsTodoTask[]
-	): Record<string, MsTodoTask[]> {
-		const grouped: Record<string, MsTodoTask[]> = {};
+	private groupTasksByList(tasks: Task[]): Record<string, Task[]> {
+		const grouped: Record<string, Task[]> = {};
 
 		for (const task of tasks) {
 			if (!grouped[task.listName]) {
@@ -351,7 +367,7 @@ export default class MsTodoPlugin extends Plugin {
 	}
 }
 
-class MsTodoSettingTab extends PluginSettingTab {
+class SettingTab extends PluginSettingTab {
 	plugin: MsTodoPlugin;
 
 	constructor(app: App, plugin: MsTodoPlugin) {
